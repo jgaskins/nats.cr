@@ -85,7 +85,7 @@ module NATS
       @out = Mutex.new
 
       @closed = false
-      @gsid = 0
+      @gsid = Atomic(Int32).new(0)
       @subs = {} of Int32 => (Subscription | InternalSubscription)
       @resp_map = {} of String => Channel(Msg?)
       @resp_sub_created = false
@@ -292,7 +292,7 @@ module NATS
     end
 
     private def internal_subscribe(subject : String)
-      sid = @gsid += 1
+      sid = @gsid.add 1
       @out.synchronize do
         @socket.write("SUB ".to_slice)
         @socket.write(subject.to_slice)
@@ -312,7 +312,7 @@ module NATS
     # nc.subscribe("foo") { |msg| puts "Received '#{msg}'" }
     # ```
     def subscribe(subject : String, &callback : Msg ->)
-      sid = @gsid += 1
+      sid = @gsid.add 1
       @out.synchronize do
         @socket.write("SUB ".to_slice)
         @socket.write(subject.to_slice)
@@ -332,7 +332,7 @@ module NATS
     # nc.subscribe("foo", "group1") { |msg| puts "Received '#{msg}'" }
     # ```
     def subscribe(subject, queue : String, &callback : Msg ->)
-      sid = @gsid += 1
+      sid = @gsid.add 1
       @out.synchronize do
         @socket.write("SUB ".to_slice)
         @socket.write(subject.to_slice)
