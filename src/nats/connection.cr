@@ -53,7 +53,8 @@ module NATS
     # nc = NATS::Connection.new
     # ```
     def initialize(
-      host, port,
+      @host : String,
+      @port : Int32,
       @user : String? = nil,
       @pass : String? = nil,
       @name : String? = nil,
@@ -168,15 +169,17 @@ module NATS
       data = msg.to_slice
       check_size(data)
 
-      @out.synchronize do
-        @socket.write(PUB_SLICE)
-        @socket.write(subject.to_slice)
-        @socket << ' ' << data.size
-        @socket.write(CR_LF_SLICE)
-        @socket.write(data)
-        @socket.write(CR_LF_SLICE)
+      with_reconnection do
+        @out.synchronize do
+          @socket.write(PUB_SLICE)
+          @socket.write(subject.to_slice)
+          @socket << ' ' << data.size
+          @socket.write(CR_LF_SLICE)
+          @socket.write(data)
+          @socket.write(CR_LF_SLICE)
+        end
+        send_flush
       end
-      send_flush
     end
 
     # Publishes an empty message to a given subject.
@@ -189,13 +192,15 @@ module NATS
       raise "Bad Subject" if subject.empty?
       raise "Connection Closed" if closed?
 
-      @out.synchronize do
-        @socket.write(PUB_SLICE)
-        @socket.write(subject.to_slice)
-        @socket.write(" 0\r\n\r\n".to_slice)
-      end
+      with_reconnection do
+        @out.synchronize do
+          @socket.write(PUB_SLICE)
+          @socket.write(subject.to_slice)
+          @socket.write(" 0\r\n\r\n".to_slice)
+        end
 
-      send_flush
+        send_flush
+      end
     end
 
     # Publishes a messages to a given subject with a reply subject.
@@ -215,17 +220,19 @@ module NATS
         data = Bytes.empty
       end
 
-      @out.synchronize do
-        @socket.write(PUB_SLICE)
-        @socket.write(subject.to_slice)
-        @socket << ' '
-        @socket.write(reply.to_slice)
-        @socket << ' ' << data.size
-        @socket.write(CR_LF_SLICE)
-        @socket.write(data)
-        @socket.write(CR_LF_SLICE)
+      with_reconnection do
+        @out.synchronize do
+          @socket.write(PUB_SLICE)
+          @socket.write(subject.to_slice)
+          @socket << ' '
+          @socket.write(reply.to_slice)
+          @socket << ' ' << data.size
+          @socket.write(CR_LF_SLICE)
+          @socket.write(data)
+          @socket.write(CR_LF_SLICE)
+        end
+        send_flush
       end
-      send_flush
     end
 
     # Flush will flush the connection to the server. Can specify a *timeout*.
@@ -541,6 +548,28 @@ module NATS
 
     private def send_flush
       @flush.send(true) if @flush.@queue.not_nil!.empty?
+    end
+
+    private def with_reconnection
+      tries = 5
+      loop do
+        return yield
+      rescue ex : IO::Error | Errno
+        tries -= 1
+        if tries <= 0
+          raise ex
+        end
+
+        initialize(
+          @host,
+          @port,
+          @user,
+          @pass,
+          @name,
+          @echo,
+          @pedantic,
+        )
+      end
     end
   end
 end
