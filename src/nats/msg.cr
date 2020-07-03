@@ -1,4 +1,4 @@
-# Copyright 2019 The NATS Authors
+# Copyright 2019-2020 The NATS Authors
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -24,7 +24,7 @@ module NATS
   #   puts "Raw Data is #{msg.data}"
   # end
   # ```
-  class Msg
+  struct Msg
     getter subject : String
     getter reply : String?
     getter data : Bytes
@@ -33,7 +33,7 @@ module NATS
 
     # :nodoc:
     def to_s(io : IO)
-      io << String.new(data)
+      io.write data
     end
 
     # :nodoc:

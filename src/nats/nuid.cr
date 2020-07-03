@@ -1,4 +1,4 @@
-# Copyright 2019 The NATS Authors
+# Copyright 2019-2020 The NATS Authors
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -48,15 +48,7 @@ module NATS
       s_10 = DIGITS[l % BASE]
       # Ugly, but parallel assignment is slightly faster here...
       s_09, s_08, s_07, s_06, s_05, s_04, s_03, s_02, s_01 = \
-         (l //= BASE; DIGITS[l % BASE]),
-         (l //= BASE; DIGITS[l % BASE]),
-         (l //= BASE; DIGITS[l % BASE]),
-         (l //= BASE; DIGITS[l % BASE]),
-         (l //= BASE; DIGITS[l % BASE]),
-         (l //= BASE; DIGITS[l % BASE]),
-         (l //= BASE; DIGITS[l % BASE]),
-         (l //= BASE; DIGITS[l % BASE]),
-         (l //= BASE; DIGITS[l % BASE])
+         (l //= BASE; DIGITS[l % BASE]), (l //= BASE; DIGITS[l % BASE]), (l //= BASE; DIGITS[l % BASE]), (l //= BASE; DIGITS[l % BASE]), (l //= BASE; DIGITS[l % BASE]), (l //= BASE; DIGITS[l % BASE]), (l //= BASE; DIGITS[l % BASE]), (l //= BASE; DIGITS[l % BASE]), (l //= BASE; DIGITS[l % BASE])
       "#{@prefix}#{s_01}#{s_02}#{s_03}#{s_04}#{s_05}#{s_06}#{s_07}#{s_08}#{s_09}#{s_10}"
     end
 
